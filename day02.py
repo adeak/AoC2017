@@ -2,7 +2,7 @@ import numpy as np
 
 def day02(inp):
     '''Compute checksum from file'''
-    # square cases are faster
+    # rectangular cases are faster
     try:
         return np.loadtxt(inp).ptp(axis=1).sum()
     except ValueError:
