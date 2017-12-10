@@ -32,5 +32,5 @@ def day10(inp,part1=True):
 
     # part 2: compute dense hash -> hex hash
     dense = [functools.reduce(operator.xor,batch) for batch in zip(*[iter(nums)]*16)]
-    return codecs.encode(bytes(dense),'hex')
+    return bytes(dense).hex()
     
