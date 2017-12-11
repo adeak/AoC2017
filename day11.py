@@ -2,7 +2,7 @@ import numpy as np
 from collections import Counter
 
 def unitvec(phi):
-    """Return 2d unitvector t angle phi in degrees"""
+    """Return 2d unitvector at angle phi in degrees"""
     return np.array([np.cos(phi/180*np.pi),np.sin(phi/180*np.pi)])
 
 def finddist(pos):
