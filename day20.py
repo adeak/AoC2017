@@ -1,10 +1,7 @@
 import numpy as np
 from scipy.optimize import minimize
-from itertools import combinations
-from collections import defaultdict
 
-def day20(inp):
-    """minimize analytical distances"""
+def parse_inputs(inp):
     r = []
     v = []
     a = []
@@ -12,9 +9,15 @@ def day20(inp):
         dats = line.split(', ')
         for lst,val in zip([r,v,a],dats):
             lst.append(list(map(int,val[3:-1].split(','))))
-    r = np.array(r)
-    v = np.array(v)
-    a = np.array(a)
+    r = np.array(r) # shape (N,3)
+    v = np.array(v) # shape (N,3)
+    a = np.array(a) # shape (N,3)
+
+    return r,v,a
+
+def day20(inp):
+    """minimize analytical distances"""
+    r,v,a = parse_inputs(inp)
 
     # in step n the position is r + n*v + n*(n+1)/2*a,
     # so we need to minimize this for every particle
@@ -32,17 +35,8 @@ def day20(inp):
 
 
 def day20b(inp):
-    """Find analytical collisionsi with masked arrays; slow but correct and guaranteed to give exact answer"""
-    r = []
-    v = []
-    a = []
-    for line in inp.rstrip().split('\n'):
-        dats = line.split(', ')
-        for lst,val in zip([r,v,a],dats):
-            lst.append(list(map(int,val[3:-1].split(','))))
-    r = np.array(r) # shape (N,3)
-    v = np.array(v) # shape (N,3)
-    a = np.array(a) # shape (N,3)
+    """Find analytical collisions with masked arrays; slow but correct and guaranteed to give exact answer"""
+    r,v,a = parse_inputs(inp)
 
     # particle position: pos0 + n*v0 + n*(n+1)/2*a -> quadratic equation for n
     # need to solve n^2*(a1-a2) + n*(2*(v1-v2) + (a1-a2)) + 2*(pos1-pos2) == [0,0,0] for smallest integer n for any pair of particles -> continue
@@ -98,19 +92,7 @@ def day20b(inp):
             # no more collisions
             return r.shape[0]
 
-        #print(A.shape,B.shape,D.shape,lininds.shape,nsols.shape,roundsols.shape,truehits.shape)
-
-#        nsols = np.concatenate([(-B+np.sqrt(D))/2/A,(-B-np.sqrt(D))/2/A])
-#        # double i1,i2 for consistent indexing later
-#        i1 = np.tile(i1,2)
-#        i2 = np.tile(i2,2)
-#        roundsols = np.round(nsols)
-#        hits = (roundsols >= n0).all(axis=-1) & np.isclose(nsols,roundsols).all(axis=-1) # all integral steps
-#        # make sure that those numbers are the same...
-#        truehits = hits & (roundsols[:,0] == roundsols[:,1]) & (roundsols[:,1] == roundsols[:,2])
-
         # find the smallest n for the given collisions
-        #i1hit,i2hit,nsolhit = i1[truehits],i2[truehits],roundsols[truehits,:].compressed()[0]
         i1hit,i2hit,nsolhit = i1[truehits],i2[truehits],np.array([row.compressed()[0] for row in roundsols[truehits,:]]) # bah ugly listcomp again
         imin = nsolhit.argmin()
         nmin = nsolhit[imin]
@@ -123,93 +105,15 @@ def day20b(inp):
         a = np.delete(a,list(colliders),axis=0)
 
         print(f'Culling {_}: size {r.shape}, n0={n0}')
+
     return r.shape[0]
 
 
-def day20bv2(inp):
-    """Find analytical collisions loopily; slow and incorrect"""
-    r = []
-    v = []
-    a = []
-    for line in inp.rstrip().split('\n'):
-        dats = line.split(', ')
-        for lst,val in zip([r,v,a],dats):
-            lst.append(list(map(int,val[3:-1].split(','))))
-    r = np.array(r) # shape (N,3)
-    v = np.array(v) # shape (N,3)
-    a = np.array(a) # shape (N,3)
-
-    # particle position: pos0 + n*v0 + n*(n+1)/2*a -> quadratic equation for n
-    # need to solve n^2*(a1-a2) + n*(2*(v1-v2) + (a1-a2)) + 2*(pos1-pos2) == [0,0,0] for smallest integer n for any pair of particles -> continue
-    n0 = 0
-    numcolls = 0
-    for _ in range(r.shape[0]//2+1): # at most N/2 collisions
-        N = r.shape[0]
-        colls = defaultdict(set)
-        for i1,i2 in combinations(range(N),2):
-            A = a[i1,:] - a[i2,:]
-            B = 2*(v[i1,:] - v[i2,:]) + A
-            C = 2*(r[i1,:] - r[i2,:])
-
-            # see if there's a collision
-            ncols = []
-            numnums = 3
-            for AA,BB,CC in zip(A,B,C):
-                if AA == 0:
-                    if BB == 0:
-                        # same initial acceleration and speed; irrelevant dimension if positions are the same too
-                        numnums -= 1 # ignore this in the test later
-                        continue
-                        
-                    # or BB != 0
-                    ncol = -CC/BB
-                    if np.isclose(ncol,np.round(ncol)) and ncol >= n0:
-                        ncols.append(np.round(ncol))
-                else:
-                    # solve the quadratic equation
-                    D = BB**2 - 4*AA*CC
-                    if D < 0:
-                        continue
-                    term1,term2 = -BB/2/AA, np.sqrt(D)/2/AA
-                    for n in term1-term2,term1+term2:
-                        # use the earlier collision if there are multiple
-                        if np.isclose(n,np.round(n)) and n >= n0:
-                            ncols.append(np.round(n))
-                            continue
-            # collision if we have `numnums` equal values in ncols
-            if len(ncols) == numnums and len(set(ncols)) == 1:
-                colls[ncols[0]] = colls[ncols[0]].union({i1,i2}) # add i1,i2 as colliding nodes to colls
-
-        if not len(colls):
-            # no more collisions found
-            return r.shape[0]
-
-        nextcoll = min(colls) # next iteration where there's a collision
-        n0 = nextcoll # start searching here for the rest
-        colliders = list(colls[nextcoll]) # the current indices of the particles that will die
-
-        # increment killcount, remove dead particles
-        numcolls += len(colliders)
-        r = np.delete(r,colliders,axis=0)
-        v = np.delete(v,colliders,axis=0)
-        a = np.delete(a,colliders,axis=0)
-
-        print(f'Culling {_}: number of particles left is {r.shape[0]}')
-
-def day20bv3(inp):
+def day20b_v2(inp,maxiter=10000):
     """simulate collisions step by step; fast but heuristic in terms of ending steps"""
-    r = []
-    v = []
-    a = []
-    for line in inp.rstrip().split('\n'):
-        dats = line.split(', ')
-        for lst,val in zip([r,v,a],dats):
-            lst.append(list(map(int,val[3:-1].split(','))))
-    r = np.array(r)
-    v = np.array(v)
-    a = np.array(a)
+    r,v,a = parse_inputs(inp)
 
-    for k in range(1000000):
+    for k in range(maxiter): # maxiter is the heuristic...
         N = r.shape[0]
         allpos = r + k*v + k*(k+1)/2*a # shape (N,3)
         indcolls = (allpos == allpos[:,None,:]).all(axis=-1) # shape (N,N)
@@ -218,10 +122,10 @@ def day20bv3(inp):
         colliders = np.unique(np.concatenate(indcolls.nonzero()))
         numcolls = len(colliders)
         if numcolls:
-            print(f'Found {numcolls} colliders in step {k}')
             r = np.delete(r,colliders,axis=0)
             v = np.delete(v,colliders,axis=0)
             a = np.delete(a,colliders,axis=0)
-            print(f'Left: {r.shape[0]} particles')
+            print(f'particles left after {k} steps: {r.shape[0]}')
+
     return r.shape[0]
  
