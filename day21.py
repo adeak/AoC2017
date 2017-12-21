@@ -15,6 +15,7 @@ def genpatt(patt):
     return np.array(outlist) # shape (8,n,n)
     
 def day21(inp,part1=True):
+    """Raw numpy brute force"""
     s2s = [] # size 2s
     s3s = [] # size 3s
     for line in inp.rstrip().split('\n'):
@@ -53,10 +54,10 @@ def day21(inp,part1=True):
             templates = templates3
             outs = outs3
         m = state.shape[0] // n # the number of chunks along a dimension
-        state = state.reshape(m,n,m,n).transpose(0,2,1,3) # (m,m,n,n)-shaped board
-        
-        # find a match for each chunk: broadcast (m,m,1,1,n,n) vs (l,8,n,n)
-        inds = (state[:,:,None,None,...] == templates).all(-1).all(-1).any(-1).nonzero() # nonzeros of shape (m,m,l), and for each (m1,m2) there should be exactly one l
+        state = state.reshape(m,n,m,n).transpose(0,2,1,3).reshape(-1,n,n) # (m*m,n,n)-shaped board
+
+        # find a match for each chunk: broadcast (m*m,1,1,n,n) vs (l,8,n,n)
+        inds = (state[:,None,None,...] == templates).reshape(m**2,-1,8,n**2).all(-1).any(-1).nonzero() # nonzeros of shape (m*m,l), and for each m1m2 there should be exactly one l
         
         # construct output state, shape (m*(n+1),m*(n+1))
         state = outs[inds[-1],...].reshape(m,m,n+1,n+1).transpose(0,2,1,3).reshape(m*(n+1),m*(n+1))
