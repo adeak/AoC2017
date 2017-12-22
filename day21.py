@@ -64,3 +64,21 @@ def day21(inp,part1=True):
 
     return state.sum()
 
+# # save final state with PIL(low) (need actual pixel resolution; fractal patterns give awful aliasing artifacts):
+# import PIL
+# from matplotlib.colors import ListedColormap
+# cmap = ((0,0,0,1),(0,0.5,0,1))  # black and green
+# PIL.Image.fromarray((ListedColormap(cmap)(state)*255).astype(np.uint8)).save('output.png')
+
+# # cluster size distribution post-processing:
+# import scipy.ndimage as ndi
+# import matplotlib.pyplot as plt
+# labels,num_labels = ndi.label(state)
+# hist,edges = np.histogram(labels.ravel(),np.arange(0.5,0.5+num_labels+1)) # number of pixels in each label in [1,num_labels] inclusive
+# maxsize = hist.max() # size of the largest cluster: 977
+# histhist,histedges = np.histogram(hist,maxsize) # histogram showing the cluster size distribution in maxsize bins
+# fig,ax = plt.subplots()
+# ax.bar((histedges[:-1]+histedges[1:])/2,histhist,histedges[1]-histedges[0])
+# ax.set_xlim(0,200) # otherwise the bars are too narrow and a lot disappear
+# #ax.set_xscale('log') # another alternative to see all the large bars
+# plt.show()
