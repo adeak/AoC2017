@@ -1,5 +1,3 @@
-from collections import defaultdict,deque
-
 def day23(inp,part1=True):
     instrs = [line.split() for line in inp.rstrip().split('\n')]
     regs = dict(zip('abcdefgh',[0]*8))
@@ -39,9 +37,7 @@ def day23(inp,part1=True):
 
     return muls if part1 else regs['h']
 
-# only need h; starts from 0 and only instruction is `sub h -1` looped by final `jnz 1 -23`
-# final is only skipped by `jnz 1 3` when the program ends
-# ending is only skipped by `jnz g 2` -> loop as long as g!=0
+# part 2:
 
 #  0 set b 84              # b = 84
 #  1 set c b               # c = b = 84
@@ -49,14 +45,9 @@ def day23(inp,part1=True):
 #  3 jnz 1 5               #
 #  4 mul b 100             #     b = 84*100
 #  5 sub b -100000         #     b = 84*100 + 100000
-#  6 set c b               #     c = b = 84*100 + 100000
-#  7 sub c -17000          #     c = 84*100 + 100000 + 17000
-
-                           # setup:
-                           # a = 1
-                           # b = 108400
-                           # c = 125400
-                           # d = e = f = g = h = 0
+#  6 set c b               #     c = b = 84*100 + 100000 = 108400
+#  7 sub c -17000          #     c = 84*100 + 100000 + 17000 = 125400
+                           #     d = e = f = g = h = 0
 
                            # while True:
 #  8 set f 1               #     f = 1
@@ -86,220 +77,8 @@ def day23(inp,part1=True):
 # 30 sub b -17             #     b += 17
 # 31 jnz 1 -23             #
 
-###
-
-# raw: 
-def raw():
-    a = 1
-    b = 108400
-    c = 125400
-    d = e = f = g = h = 0
-    
-    while True:
-        f = 1
-        d = 2
-        first1 = True
-        while first1 or g != 0: # do-while
-            if first1: first1 = False
-            e = 2
-            first2 = True
-            while first2 or g != 0: # do-while
-                if first2: first2 = False
-                g = d
-                g *= e
-                g -= b
-                if g == 0:
-                     f = 0
-                e += 1
-                g = e
-                g -= b
-    
-            d += 1
-            g = d
-            g -= b
-    
-        if f == 0:
-            h += 1
-        g = b
-        g -= c
-        if g == 0:
-            return h
-        b += 17
-
-
-###
-
-# optimized 0:
-def opt0():
-    a = 1
-    b = 108400
-    c = 125400
-    d = e = f = g = h = 0
-                           
-    while True:
-        f = 1
-        d = 2
-    
-        first1 = True
-        while first1 or g != 0:
-            if first1: first1 = False
-            e = 2
-    
-            first2 = True
-            while first2 or g != 0:
-                if first2: first2 = False
-                # 3 if we entered here, previous g wasn't 0 or first iteration
-                g = d*e - b
-                # 2 if g was zero: d*e == b
-                if g == 0:
-                     # 1 this is only where f gets set from 1
-                     f = 0
-                # 5/1 if g = d*e - b was zero:
-                e += 1
-                g = e - b
-                # 5/2 g = (d+1)*e_prev - b is only zero if e_prev == 0 and b == 0
-                #     but then 
-                # 4 e - b wasn't zero
-
-
-                # (g!= 0)
-                # g = d*e0 - b
-                # if d*e0-b == 0: f=0
-                # e = e0+1
-                # g = e0 + 1 - b
-                # if g==0==e0+1-b: break
-                #
-                # g = d*(e0+1) - b
-                # if d*(e0+1)-b == 0: f=0
-                # e = e0 + 2
-                # g= ...
-                # if e0 + 2 - b == 0: break
-                # 
-                # when it breaks: e = b; in last f-testing step e = b + 1
-                # if d*e0-b == 0 or d*(e0+1)-b==0 or ... or d*(b+1) - b: f=0
-        
-            d += 1
-            g = d - b
-        
-        if f == 0:
-            # 0 this is only where h changes value
-            h += 1
-        g = b - c
-        if g == 0:
-            return h
-        b += 17
-
-# optimized 1:
-def opt1():
-    a = 1
-    b = 108400
-    c = 125400
-    d = e = f = g = h = 0
-                           
-    while True:
-        f = 1
-        d = 2
-    
-        first = True
-        while first or g != 0:
-            if first: first = False
-            e = 2
-    
-    
-            e0 = e
-            e = b
-            g = 0
-            if d!=0 and 0 in range(d*e0-b,d*(b+1)-b+1,d):
-                f = 0
-    
-            d += 1
-            g = d - b
-        
-        if f == 0:
-            # 0 this is only where h changes value
-            h += 1
-        g = b - c
-        if g == 0:
-            return h
-        b += 17
-
-
-# optimized 2:
-def opt2():
-    a = 1
-    b = 108400
-    c = 125400
-    d = e = f = g = h = 0
-                           
-    while True:
-        f = 1
-        d = 2
-    
-        first = True
-        while first or g != 0:
-            if first: first = False
-    
-            g = 0
-            if d!=0 and 0 in range(d*2-b,d*(b+1)-b+1,d):
-                f = 0
-
-            d += 1
-            g = d - b
-        
-        if f == 0:
-            # 0 this is only where h changes value
-            h += 1
-        g = b - c
-        if g == 0:
-            return h
-        b += 17
-
-
-# optimized 3:
-def opt3():
-    a = 1
-    b = 108400
-    c = 125400
-    d = e = f = g = h = 0
-                           
-    while True:
-        f = 1
-        d = 2
-    
-        # initially f=1, d=2, g=0, skip loop
-        # f==0 -> h-= 1
-        # g=b-c=-91600+108600
-        # b-= 1
-        # loop True, enter outer g loop
-    
-        first = True
-        while first or g != 0:
-            if first: first = False
-    
-            # g starts from -91600+108600
-            # f maybe gets set to 0
-            # d -= 1
-            # g = d - b until g == 0
-            # -> at exit d = b; g = 0
-    
-            if d!=0 and 0 in range(d*2-b,d*(b+1)-b+1,d):
-                f = 0
-    
-            d += 1
-            g = d - b
-        
-        if f == 0:
-            # 0 this is only where h changes value
-            h += 1
-        g = b - c
-        if g == 0:
-            return h
-        b += 17
-
-        #e=b+17;print(a,b,c,d,e,f,g,h) # TODO
-
-# optimized 4:
-def opt4():
+def day23b():
+    """Execute manually optimized input code"""
     a = 1
     b = 108400
     c = 125400
