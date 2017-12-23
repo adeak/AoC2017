@@ -79,10 +79,9 @@ def day23(inp,part1=True):
 
 def day23b():
     """Execute manually optimized input code"""
-    a = 1
     b = 108400
     c = 125400
-    d = e = f = g = h = 0
+    d = f = g = h = 0
                            
     while True:
         f = 1
