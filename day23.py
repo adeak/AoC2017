@@ -79,15 +79,8 @@ def day23(inp,part1=True):
 
 def day23b():
     """Execute manually optimized input code"""
-    b = 108400
+    b0 = 108400
+    db = 17
     c = 125400
-    h = 0
                            
-    while True:
-        if any(dd!=0 and 0 in range(dd*2-b,dd*(b+1)-b+1,dd) for dd in range(2,b)):
-            h += 1
-        
-        if b == c:
-            return h
-        b += 17
-
+    return sum(any(0 in range(d*2-b,d*(b+1)-b+1,d) for d in range(2,b)) for b in range(b0,c+1,db))
