@@ -81,26 +81,13 @@ def day23b():
     """Execute manually optimized input code"""
     b = 108400
     c = 125400
-    d = f = g = h = 0
+    h = 0
                            
     while True:
-        f = 1
-        d = 2
-    
-        first = True
-        while first or g != 0:
-            if first: first = False
-
-            if any(dd!=0 and 0 in range(dd*2-b,dd*(b+1)-b+1,dd) for dd in range(d,b)):
-                f = 0
-            d = b
-            g = 0
-        
-        if f == 0:
-            # 0 this is only where h changes value
+        if any(dd!=0 and 0 in range(dd*2-b,dd*(b+1)-b+1,dd) for dd in range(2,b)):
             h += 1
-        g = b - c
-        if g == 0:
+        
+        if b == c:
             return h
         b += 17
 
